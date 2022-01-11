@@ -1703,6 +1703,37 @@ class BulbDevice(Device):
         return state
 
 
+class RobotVacuumDevice(Device):
+    DPS_MODE_INDEX = 3
+    DPS_BATTERY_INDEX = 6
+    DPS_SUCTION_INDEX = 101
+    DPS_ROBOTLOG_INDEX = 108
+    SUCTION_POWERS = {1: 'low', 2: 'nar', 3: 'high', 4: 'supper'}
+
+    def __init__(self, dev_id, address, local_key="", dev_type="default"):
+        super(RobotVacuumDevice, self).__init__(dev_id, address, local_key, dev_type)
+
+    def set_mode(self, mode="smart"):
+        """
+        Sets mode for vacuum.
+
+        Args: mode(str): Mode to set. Some values that can be used are: standby, smart, chargego, right_bow,
+        wall_follow, spiral. Defaults to starting smart mode.
+        """
+        self.set_value(self.DPS_MODE_INDEX, mode)
+
+    def set_suction(self, power=2):
+        """Set suction power for vacuum. Possible values range from 1 to 4."""
+        self.set_value(self.DPS_SUCTION_INDEX, self.SUCTION_POWERS[power])
+
+    def send_to_charge(self):
+        """Sends vacuum to return to its dock and begin charging."""
+        self.set_mode('chargego')
+
+    def battery_percentage(self):
+        """Returns battery percentage of vacuum as an int."""
+        return self.status()['dps'][str(self.DPS_BATTERY_INDEX)]
+
 # Utility Functions
 
 # SCAN network for Tuya devices
