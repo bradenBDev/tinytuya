@@ -87,6 +87,8 @@
 # Modules
 from __future__ import print_function  # python 2.7 support
 import base64
+import collections
+import threading
 from hashlib import md5
 import json
 import logging
@@ -460,6 +462,9 @@ class XenonDevice(object):
         self.dps_to_request = {}
         self.seqno = 0
         self.sendWait = 0.01
+        self.dps_listener = None
+        self._dps_listener_event = threading.Event()
+        self.dps_callbacks = collections.defaultdict(list)
         if address is None or address == "Auto" or address == "0.0.0.0":
             # try to determine IP address automatically
             (addr, ver) = self.find(dev_id)
@@ -702,6 +707,54 @@ class XenonDevice(object):
         except:
             json_payload = error_json(ERR_JSON, payload)
         return json_payload
+
+    def add_dps_callback(self, dps, callback):
+        """
+        Add a callback for the dps listener. Use a dps of 0 to run the callback on every dps event.
+
+        Args:
+            dps(int): The dps number that the callback should be called on.
+            callback(function): The callback function to run when dps is emitted.
+        """
+        self.dps_callbacks[str(dps)].append(callback)
+
+    def start_dps_listener(self):
+        """Starts the device's dps listener thread."""
+        self.dps_listener = threading.Thread(target=self._dps_listen, daemon=True)
+        self.dps_listener.start()
+        self._dps_listener_event.clear()
+
+    def stop_dps_listener(self):
+        """Stops the device's dps listener thread."""
+        self._dps_listener_event.set()
+
+    def _dps_listen(self):
+        """
+        Internal listener for dps changes. Start listening for dps
+        changes by calling start_dps_listener. Will call handler functions
+        for a dps change if they're added using the add_dps_callback function.
+        """
+        while not self._dps_listener_event.is_set():
+            # See if any data is available
+            data = self.receive()
+
+            # Check to see if the 't' key is in the data dict, if it's there then the event was emitted from the
+            # vacuum itself, not queried with status().
+            if data is not None and data.get('t') is not None:
+                log.debug("Received Payload: %r" % data)
+
+                dps_list = list(data["dps"].keys())
+                dps = dps_list[0]
+
+                for cb in self.dps_callbacks[dps]:
+                    # Check if dps listener has been stopped before running callback
+                    if not self._dps_listener_event.is_set():
+                        cb(data)
+
+            # Send keyalive heartbeat
+            log.debug(" > Send Heartbeat Ping < ")
+            payload = self.generate_payload(HEART_BEAT)
+            self.send(payload)
 
     def receive(self):
         """
@@ -1721,6 +1774,10 @@ class RobotVacuumDevice(Device):
         wall_follow, spiral. Defaults to starting smart mode.
         """
         self.set_value(self.DPS_MODE_INDEX, mode)
+
+    def start(self, mode='smart'):
+        """Alias for set_mode"""
+        self.set_mode(mode)
 
     def set_suction(self, power=2):
         """Set suction power for vacuum. Possible values range from 1 to 4."""
