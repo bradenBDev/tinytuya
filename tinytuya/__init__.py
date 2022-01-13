@@ -718,9 +718,9 @@ class XenonDevice(object):
         """
         self.dps_callbacks[str(dps)].append(callback)
 
-    def start_dps_listener(self):
+    def start_dps_listener(self, daemon=True):
         """Starts the device's dps listener thread."""
-        self.dps_listener = threading.Thread(target=self._dps_listen, daemon=True)
+        self.dps_listener = threading.Thread(target=self._dps_listen, daemon=daemon)
         self.dps_listener.start()
         self._dps_listener_event.clear()
 
