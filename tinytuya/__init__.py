@@ -745,7 +745,7 @@ class XenonDevice(object):
 
                 # Run callbacks which trigger on any dps event
                 for cb in self.dps_callbacks['0']:
-                    cb(data)
+                    threading.Thread(target=cb, args=(data,)).start()
 
                 dps_list = list(data["dps"].keys())
                 dps = dps_list[0]
@@ -754,7 +754,7 @@ class XenonDevice(object):
                 for cb in self.dps_callbacks[dps]:
                     # Check if dps listener has been stopped before running callback
                     if not self._dps_listener_event.is_set():
-                        cb(data)
+                        threading.Thread(target=cb, args=(data,)).start()
 
             # Send keyalive heartbeat
             log.debug(" > Send Heartbeat Ping < ")
