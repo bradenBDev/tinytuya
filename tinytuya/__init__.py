@@ -743,9 +743,14 @@ class XenonDevice(object):
             if data is not None and data.get('t') is not None:
                 log.debug("Received Payload: %r" % data)
 
+                # Run callbacks which trigger on any dps event
+                for cb in self.dps_callbacks['0']:
+                    cb(data)
+
                 dps_list = list(data["dps"].keys())
                 dps = dps_list[0]
 
+                # Run callbacks which trigger on this specific dps event
                 for cb in self.dps_callbacks[dps]:
                     # Check if dps listener has been stopped before running callback
                     if not self._dps_listener_event.is_set():
