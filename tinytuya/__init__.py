@@ -1767,7 +1767,8 @@ class RobotVacuumDevice(Device):
     DPS_SUCTION_INDEX = 101
     DPS_ROBOTLOG_INDEX = 108
     SUCTION_POWERS = {1: 'low', 2: 'nar', 3: 'high', 4: 'supper'}
-    CLEANING_STATUSES = {'0': 'standby', '4': 'start_charge', '5': 'charging', '7': 'charge_complete'}
+    CLEANING_STATUSES = {'0': 'standby', '1': 'auto_cleaning', '4': 'start_charge', '5': 'charging',
+                         '7': 'charge_complete'}
 
     def __init__(self, dev_id, address, local_key="", dev_type="default"):
         super(RobotVacuumDevice, self).__init__(dev_id, address, local_key, dev_type)
