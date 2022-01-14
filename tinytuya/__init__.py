@@ -1767,6 +1767,7 @@ class RobotVacuumDevice(Device):
     DPS_SUCTION_INDEX = 101
     DPS_ROBOTLOG_INDEX = 108
     SUCTION_POWERS = {1: 'low', 2: 'nar', 3: 'high', 4: 'supper'}
+    CLEANING_STATUSES = {'0': 'standby', '4': 'start_charge', '5': 'charging', '7': 'charge_complete'}
 
     def __init__(self, dev_id, address, local_key="", dev_type="default"):
         super(RobotVacuumDevice, self).__init__(dev_id, address, local_key, dev_type)
@@ -1795,6 +1796,13 @@ class RobotVacuumDevice(Device):
     def battery_percentage(self):
         """Returns battery percentage of vacuum as an int."""
         return self.status()['dps'][str(self.DPS_BATTERY_INDEX)]
+
+    def cleaning_status(self):
+        """Returns the device's cleaning status. Statuses are listed in RobotVacuumDevice.CLEANING_STATUSES."""
+
+        # Get the cleaning status dps, which is 5
+        status = self.status()['dps']['5']
+        return self.CLEANING_STATUSES[status]
 
 # Utility Functions
 
